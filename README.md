@@ -2,6 +2,8 @@
 
 <img src="app/images/icon.svg" alt="app icon" width="72" />
 
+[Download Preview 1](https://bcr-reliability-privacy.vercel.app) · [GitHub release](https://github.com/jtagaca/bcr-reliability-privacy/releases/tag/preview-1) · [Upstream BCR](https://github.com/chenxiaolong/BCR)
+
 > [!WARNING]
 > This is an unofficial, device-untested preview fork of [BCR](https://github.com/chenxiaolong/BCR), based on version 3.5. It uses a different Android signing certificate and must not be installed over the official app. Use the [upstream releases](https://github.com/chenxiaolong/BCR/releases) if you want the original, stable project.
 

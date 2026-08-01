@@ -2,6 +2,8 @@
 
 This directory contains the public download and disclosure page for the unofficial BCR Reliability + Privacy preview.
 
+Production: https://bcr-reliability-privacy.vercel.app
+
 ## Local development
 
 ```bash

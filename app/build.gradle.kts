@@ -110,8 +110,8 @@ val gitVersionTriple = describeVersion(git)
 val gitVersionCode = getVersionCode(gitVersionTriple)
 val gitVersionName = getVersionName(git, gitVersionTriple)
 
-val projectUrl = "https://github.com/chenxiaolong/BCR"
-val releaseMetadataBranch = "master"
+val projectUrl = "https://github.com/jtagaca/bcr-reliability-privacy"
+val releaseMetadataBranch = "main"
 
 val extraDir = layout.buildDirectory.map { it.dir("extra") }
 val archiveDir = extraDir.map { it.dir("archive") }
@@ -270,8 +270,8 @@ androidComponents.onVariants { variant ->
             props["name"] = rootProject.name
             props["version"] = "v${variantVersionName.get()}"
             props["versionCode"] = variantVersionCode.get().toString()
-            props["author"] = "chenxiaolong"
-            props["description"] = "Basic Call Recorder"
+            props["author"] = "jtagaca, based on BCR by chenxiaolong"
+            props["description"] = "Unofficial BCR reliability and privacy preview"
 
             if (variant.name == "release") {
                 props["updateJson"] = "${projectUrl}/raw/${releaseMetadataBranch}/app/magisk/updates/${variant.name}/info.json"

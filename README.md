@@ -1,8 +1,11 @@
-# Basic Call Recorder
+# BCR Reliability & Privacy
 
 <img src="app/images/icon.svg" alt="app icon" width="72" />
 
-BCR is a simple Android call recording app for rooted devices or devices running custom firmware. Once enabled, it stays out of the way and automatically records incoming and outgoing calls in the background.
+> [!WARNING]
+> This is an unofficial, device-untested preview fork of [BCR](https://github.com/chenxiaolong/BCR), based on version 3.5. It uses a different Android signing certificate and must not be installed over the official app. Use the [upstream releases](https://github.com/chenxiaolong/BCR/releases) if you want the original, stable project.
+
+BCR is a simple Android call recording app for rooted devices or devices running custom firmware. This fork focuses on safer recording failure handling, reliable retention cleanup, and preventing sensitive recordings from entering Android backup or device-transfer archives.
 
 <img src="app/images/light.png" alt="light mode screenshot" width="200" /> <img src="app/images/dark.png" alt="dark mode screenshot" width="200" />
 
@@ -37,7 +40,7 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
 
 ## Usage
 
-1. Download the latest version from the [releases page](https://github.com/chenxiaolong/BCR/releases). To verify the digital signature, see the [verifying digital signatures](#verifying-digital-signatures) section.
+1. Download the latest preview from this fork's [releases page](https://github.com/jtagaca/bcr-reliability-privacy/releases). Compare the file against `SHA256SUMS.txt` on the same release before installing it.
 
 2. Install BCR as a system app.
 
@@ -49,10 +52,10 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
         * **NOTE**: The `READ_CALL_LOG` permission is hard restricted in Android 10+, which prevents it from being granted, even via Android's settings. To remove this restriction, run via adb after rebooting back into Android:
           ```bash
           # If rooted, run inside of `su`:
-          CLASSPATH=/system/priv-app/com.chiller3.bcr/app-release.apk app_process / com.chiller3.bcr.standalone.RemoveHardRestrictionsKt
+          CLASSPATH=/system/priv-app/com.chiller3.bcr/app-debug.apk app_process / com.chiller3.bcr.standalone.RemoveHardRestrictionsKt
 
           # If unrooted, install BCR as both a user app and a system app:
-          pm install /system/priv-app/com.chiller3.bcr/app-release.apk
+          pm install /system/priv-app/com.chiller3.bcr/app-debug.apk
           ```
         * **NOTE**: If the custom firmware's `system` partition is formatted with `erofs`, then the filesystem is read-only and it is not possible to use this method.
         * Manually extracting the files from the `system/` folder in the zip will also work as long as the files have `644` permissions and the `u:object_r:system_file:s0` SELinux label.
@@ -329,27 +332,23 @@ BCR relies heavily on system app permissions in order to function properly. This
 
 With these two permissions, BCR can reliably detect phone calls and record from the call's audio stream. The recording process pulls PCM s16le raw audio and uses Android's built-in encoders to produce the compressed output file.
 
-## Verifying digital signatures
+## Preview signing and checksums
 
-Both the zip file and the APK contained within are digitally signed. **NOTE**: The zip file signing mechanism switched from GPG to SSH as of version 1.31. To verify signatures for old versions, see version 1.30's [`README.md`](https://github.com/chenxiaolong/BCR/blob/v1.30/README.md#verifying-digital-signatures).
+This fork's preview module zip does not have the upstream project's detached signature. Each preview release instead includes `SHA256SUMS.txt` so downloads can be checked for accidental corruption. The APK is signed with this fork's current Android debug certificate, not the official BCR certificate.
 
-### Verifying zip file signature
-
-To verify the digital signatures of the downloads, follow [the steps here](https://github.com/chenxiaolong/chenxiaolong/blob/master/VERIFY_SSH_SIGNATURES.md).
-
-### Verifying apk signature
-
-First, extract the apk from the zip and then run:
+Extract the APK from the module zip and run:
 
 ```
-apksigner verify --print-certs system/priv-app/com.chiller3.bcr/app-release.apk
+apksigner verify --print-certs system/priv-app/com.chiller3.bcr/app-debug.apk
 ```
 
-Then, check that the SHA-256 digest of the APK signing certificate is:
+For Preview 1, the SHA-256 digest of the APK signing certificate is:
 
 ```
-d16f9b375df668c58ef4bb855eae959713d6d02e45f7f2c05ce2c27ae944f4f9
+0baedd766667add486bfd58ed1287b0c4604c38e82ec6429a5eb1f12295a43a9
 ```
+
+Because this differs from the official BCR certificate, Android will reject an in-place update from the official app. This preview is intended for testing and should not be your only copy of important recordings.
 
 ## Building from source
 

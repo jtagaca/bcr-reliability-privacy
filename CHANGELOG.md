@@ -14,6 +14,7 @@
 * Fix retention cleanup for malformed filenames and Unix timestamp templates
 * Treat a failed source-file deletion as a failed recording move
 * Fix fallback parser test coverage
+* Point fork metadata, update links, and installation guidance to the fork repository
 
 ### Version 3.5
 

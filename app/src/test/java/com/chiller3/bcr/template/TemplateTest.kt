@@ -56,10 +56,6 @@ class TemplateTest {
             parse(Template.variableRefParser, "{foo}"),
         )
         assertEquals(
-            Template.VariableRef("foo", null),
-            parse(Template.variableRefParser, "{foo}"),
-        )
-        assertEquals(
             Template.VariableRef("foo", ""),
             parse(Template.variableRefParser, "{foo:}"),
         )
@@ -141,7 +137,7 @@ class TemplateTest {
         )
         for (s in arrayOf("", "[foo", "foo]")) {
             assertThrows(ParserException::class.java) {
-                parse(Template.variableRefParser, s)
+                parse(Template.fallbackParser, s)
             }
         }
     }

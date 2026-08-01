@@ -159,9 +159,13 @@ class RecorderThread(
     private val sampleRate: UInt
 
     // Logging
-    private lateinit var logcatPath: OutputPath
-    private lateinit var logcatFile: DocumentFile
-    private lateinit var logcatProcess: Process
+    private data class LogcatSession(
+        val path: OutputPath,
+        val file: DocumentFile,
+        val process: Process,
+    )
+
+    private var logcatSession: LogcatSession? = null
 
     private var wallBeginNanos = 0L
 
@@ -344,15 +348,15 @@ class RecorderThread(
             Log.i(tag, "Recording thread completed")
 
             try {
-                val logcatOutput = stopLogcat()
-
-                // Log files are always kept when an error occurs to avoid the hassle of having the
-                // user manually enable debug mode and needing to reproduce the problem.
-                if (prefs.isDebugMode || status is Status.Failed) {
-                    additionalFiles.add(logcatOutput)
-                } else {
-                    Log.d(tag, "No need to preserve logcat")
-                    logcatOutput.toDocumentFile(context).delete()
+                stopLogcat()?.let { logcatOutput ->
+                    // Log files are always kept when an error occurs to avoid the hassle of having
+                    // the user manually enable debug mode and needing to reproduce the problem.
+                    if (prefs.isDebugMode || status is Status.Failed) {
+                        additionalFiles.add(logcatOutput)
+                    } else {
+                        Log.d(tag, "No need to preserve logcat")
+                        logcatOutput.toDocumentFile(context).delete()
+                    }
                 }
             } catch (e: Exception) {
                 Log.w(tag, "Failed to dump logcat", e)
@@ -398,26 +402,35 @@ class RecorderThread(
     }
 
     private fun startLogcat() {
-        assert(!this::logcatProcess.isInitialized) { "logcat already started" }
+        check(logcatSession == null) { "logcat already started" }
 
         Log.d(tag, "Starting log file (${BuildConfig.VERSION_NAME})")
 
-        logcatPath = getLogcatPath()
-        logcatFile = dirUtils.createFileInDefaultDir(logcatPath.value, MIME_LOGCAT)
-        logcatProcess = ProcessBuilder("logcat", "*:V")
-            // This is better than -f because the logcat implementation calls fflush() when the
-            // output stream is stdout. logcatFile is guaranteed to have file:// scheme because it's
-            // created in the default output directory.
-            .redirectOutput(logcatFile.uri.toFile())
-            .redirectErrorStream(true)
-            .start()
+        val path = getLogcatPath()
+        var file: DocumentFile? = null
+
+        try {
+            file = dirUtils.createFileInDefaultDir(path.value, MIME_LOGCAT)
+            val process = ProcessBuilder("logcat", "*:V")
+                // This is better than -f because the logcat implementation calls fflush() when the
+                // output stream is stdout. The file is guaranteed to have file:// scheme because
+                // it's created in the default output directory.
+                .redirectOutput(file.uri.toFile())
+                .redirectErrorStream(true)
+                .start()
+            logcatSession = LogcatSession(path, file, process)
+        } catch (e: Exception) {
+            Log.w(tag, "Failed to start logcat; continuing without per-call logs", e)
+            file?.delete()
+        }
     }
 
-    private fun stopLogcat(): OutputFile {
-        assert(this::logcatProcess.isInitialized) { "logcat not started" }
+    private fun stopLogcat(): OutputFile? {
+        val session = logcatSession ?: return null
+        logcatSession = null
 
-        var uri = logcatFile.uri
-        var path = logcatPath
+        var uri = session.file.uri
+        var path = session.path
         var moveError: Exception? = null
 
         try {
@@ -428,14 +441,14 @@ class RecorderThread(
                 // handling to flush buffers when interrupted.
                 sleep(1000)
 
-                logcatProcess.destroy()
+                session.process.destroy()
             } finally {
-                logcatProcess.waitFor()
+                session.process.waitFor()
             }
         } finally {
             val finalLogcatPath = getLogcatPath()
             try {
-                uri = dirUtils.moveToOutputDir(logcatFile, finalLogcatPath.value, MIME_LOGCAT).uri
+                uri = dirUtils.moveToOutputDir(session.file, finalLogcatPath.value, MIME_LOGCAT).uri
                 path = finalLogcatPath
             } catch (e: Exception) {
                 moveError = e

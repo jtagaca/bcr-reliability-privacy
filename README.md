@@ -23,6 +23,7 @@ BCR is a simple Android call recording app for rooted devices or devices running
 * Quick settings toggle
 * No persistent notification unless a recording is in progress
 * No network access permission
+* Android backup and device transfer are disabled to prevent recordings from being copied automatically
 * Supports both Magisk and KernelSU
 
 ## Non-features

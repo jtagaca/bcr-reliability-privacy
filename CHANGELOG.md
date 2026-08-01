@@ -9,6 +9,12 @@
 
 ### Unreleased
 
+* Disable Android backup and device transfer for sensitive app data and recordings
+* Continue call recording if per-call diagnostic logging cannot be started
+* Fix retention cleanup for malformed filenames and Unix timestamp templates
+* Treat a failed source-file deletion as a failed recording move
+* Fix fallback parser test coverage
+
 ### Version 3.5
 
 * Update Simplified Chinese (zh-CN) translations ([PR #908 @lofx-lee])

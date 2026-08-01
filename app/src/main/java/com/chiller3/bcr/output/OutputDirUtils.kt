@@ -149,7 +149,10 @@ class OutputDirUtils(private val context: Context, private val redactor: Redacto
                 }
             }
 
-            sourceFile.delete()
+            if (!sourceFile.delete()) {
+                throw IOException("Failed to delete source file at " +
+                        redactor.redact(sourceFile.uri))
+            }
         } catch (e: Exception) {
             targetFile.delete()
             throw e

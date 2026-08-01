@@ -14,9 +14,11 @@ import com.chiller3.bcr.template.Template
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.text.ParsePosition
 import java.time.DateTimeException
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.DateTimeParseException
 import java.time.format.SignStyle
@@ -206,20 +208,7 @@ class OutputFilenameGenerator(
     }
 
     private fun parseTimestamp(input: String, startPos: Int): Temporal? {
-        val pos = ParsePosition(startPos)
-        val parsed = retentionFormatter.parse(input, pos)
-
-        return try {
-            parsed.query(ZonedDateTime::from)
-        } catch (_: DateTimeException) {
-            try {
-                // A custom pattern might not specify the time zone
-                parsed.query(LocalDateTime::from)
-            } catch (_: DateTimeException) {
-                // A custom pattern might only specify a date with no time
-                parsed.query(LocalDate::from).atStartOfDay()
-            }
-        }
+        return parseTimestamp(retentionFormatter, input, startPos)
     }
 
     private fun parseTimestamp(input: String): Temporal? {
@@ -238,7 +227,7 @@ class OutputFilenameGenerator(
                             val timestampPos = literalPos + location.literal.length
 
                             try {
-                                return parseTimestamp(input, timestampPos)
+                                parseTimestamp(input, timestampPos)?.let { return it }
                             } catch (_: DateTimeParseException) {
                                 // Ignore
                             } catch (e: DateTimeException) {
@@ -361,7 +350,40 @@ class OutputFilenameGenerator(
             .appendOffset("+HHMMss", "+0000")
             .toFormatter()
 
-        private fun dateFormatter(arg: String) = DateTimeFormatterBuilder().apply {
+        internal fun parseTimestamp(
+            formatter: DateTimeFormatter,
+            input: String,
+            startPos: Int = 0,
+        ): Temporal? {
+            val parsed = try {
+                formatter.parse(input, ParsePosition(startPos))
+            } catch (_: DateTimeException) {
+                null
+            } ?: return null
+
+            return try {
+                parsed.query(ZonedDateTime::from)
+            } catch (_: DateTimeException) {
+                try {
+                    // unix_s and unix_ms contain an instant without a time zone.
+                    parsed.query(Instant::from)
+                } catch (_: DateTimeException) {
+                    try {
+                        // A custom pattern might not specify the time zone.
+                        parsed.query(LocalDateTime::from)
+                    } catch (_: DateTimeException) {
+                        try {
+                            // A custom pattern might only specify a date with no time.
+                            parsed.query(LocalDate::from).atStartOfDay()
+                        } catch (_: DateTimeException) {
+                            null
+                        }
+                    }
+                }
+            }
+        }
+
+        internal fun dateFormatter(arg: String) = DateTimeFormatterBuilder().apply {
             when (arg) {
                 "unix_s" -> appendValue(ChronoField.INSTANT_SECONDS)
                 "unix_ms" -> {
